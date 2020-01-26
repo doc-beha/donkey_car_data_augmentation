@@ -2,7 +2,7 @@
 Script to augment teaching data
 
 Usage:
-    augment.py --path=<records_dir> --out=<target_dir>
+    augment.py --path=<records_dir> --out=<target_dir> [--method=all|classic|gaussian|threshold|canny|style_aug]
 
 Options:
     -h --help        Show this screen.
@@ -332,7 +332,7 @@ def augment_canny(img, data):
     img = canny.run(img)
     return (img, data)
 
-def augment(target, out = None):
+def augment(target, out = None, method_args='all'):
 
     print('Start augmentation')
 
@@ -351,36 +351,39 @@ def augment(target, out = None):
         print('  Original files copies to "%s"', init_path)
     print('  -------------------------------------------------')
     
-    size, history_path = augmentation_round(init_path, out, count, 'history', augment_history, gen_history_meta)
-    count = count + size
-    size, flipped_path = augmentation_round(history_path, out, count, 'flipped', augment_flip)
-    count = count + size
-    size, bright_path = augmentation_round(flipped_path, out, count, 'bright', augment_brightness)
-    count = count + size
-    size, shadow_path = augmentation_round(bright_path, out, count, 'shadow', augment_shadow)
-    count = count + size
+    if 'all' in method_args or 'classic' in method_args:
+        size, history_path = augmentation_round(init_path, out, count, 'history', augment_history, gen_history_meta)
+        count = count + size
+        size, flipped_path = augmentation_round(history_path, out, count, 'flipped', augment_flip)
+        count = count + size
+        size, bright_path = augmentation_round(flipped_path, out, count, 'bright', augment_brightness)
+        count = count + size
+        size, shadow_path = augmentation_round(bright_path, out, count, 'shadow', augment_shadow)
+        count = count + size
     
     
+    if 'all' in method_args or 'gaussian' in method_args:
+        size, gaussian_path = augmentation_round(init_path, out, count, 'gaussian_blur', augment_gaussian_blur)
+        count = count + size
+       
+    if 'all' in method_args or 'threshold' in method_args:
+        size, threshold = augmentation_round(init_path, out, count, 'threshold', augment_threshold)
+        count = count + size
+        
+    if 'all' in method_args or 'canny' in method_args:
+        size, canny = augmentation_round(init_path, out, count, 'canny', augment_canny)
+        count = count + size
     
-    size, gaussian_path = augmentation_round(init_path, out, count, 'gaussian_blur', augment_gaussian_blur)
-    count = count + size
-    
-    size, threshold = augmentation_round(init_path, out, count, 'threshold', augment_threshold)
-    count = count + size
-    
-    size, canny = augmentation_round(init_path, out, count, 'canny', augment_canny)
-    count = count + size
-    
-    
-    global augment_style_alpha
-    
-    augment_style_alpha = 0.1
-    size, style = augmentation_round(init_path, out, count, 'style_aug_01', augment_style)
-    count = count + size
-    
-    augment_style_alpha = 0.5
-    size, style = augmentation_round(init_path, out, count, 'style_aug05', augment_style)
-    count = count + size
+    if 'all' in method_args or 'style_aug' in method_args:
+        global augment_style_alpha
+        
+        augment_style_alpha = 0.1
+        size, style = augmentation_round(init_path, out, count, 'style_aug_01', augment_style)
+        count = count + size
+        
+        augment_style_alpha = 0.5
+        size, style = augmentation_round(init_path, out, count, 'style_aug05', augment_style)
+        count = count + size
     
     print('  -------------------------------------------------')
     print('Augmentation done. Total records %s.' % count)
@@ -395,11 +398,18 @@ if __name__ == '__main__':
 
     target_path = args['--path']
     out_path = args['--out']
+    
+    method = args['--method']
+    method_args = 'all'
 
     if out_path:
         ensure_directory(out_path)
+        
+    if method:
+        method_args = method
+        
 
     if out_path and target_path is not out_path and not is_empty(out_path):
         print(' Target folder "%s" must be empty' % out_path)
     else:
-        augment(target_path, out_path)
+        augment(target_path, out_path,method_args)
