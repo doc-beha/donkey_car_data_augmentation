@@ -2,7 +2,7 @@
 Script to augment teaching data
 
 Usage:
-    augment.py --path=<records_dir> --out=<target_dir> [--method=all|classic|gaussian|threshold|canny|style_aug]
+    augment.py --path=<records_dir> --out=<target_dir> [--method=all|classic|gaussian|threshold|canny|style_aug] --gpu_enabled=1
 
 Options:
     -h --help        Show this screen.
@@ -24,6 +24,7 @@ import copy
 import shutil
 import os
 from collections import deque
+from os import sys
 
 # user defined imports
 import cv
@@ -320,10 +321,11 @@ def augment_threshold(img, data):
 
 #
 augment_style_alpha = 0.1
+augment_style_gpu_enabled = 0
 # style augmentation
 def augment_style(img, data):
     style = ImgStyleAug()
-    img = style.img_style(img,augment_style_alpha)
+    img = style.img_style(img,augment_style_alpha,augment_style_gpu_enabled)
     return (img, data)
 
 # canny
@@ -332,7 +334,7 @@ def augment_canny(img, data):
     img = canny.run(img)
     return (img, data)
 
-def augment(target, out = None, method_args='all'):
+def augment(target, out = None, method_args='all',gpu_enabled=0):
 
     print('Start augmentation')
 
@@ -376,6 +378,9 @@ def augment(target, out = None, method_args='all'):
     
     if 'all' in method_args or 'style_aug' in method_args:
         global augment_style_alpha
+        global augment_style_gpu_enabled
+        if gpu_enabled:
+            augment_style_gpu_enabled = 1
         
         augment_style_alpha = 0.1
         size, style = augmentation_round(init_path, out, count, 'style_aug_01', augment_style)
@@ -394,6 +399,7 @@ def is_empty(dir):
 
 
 if __name__ == '__main__':
+    
     args = docopt(__doc__)
 
     target_path = args['--path']
@@ -401,6 +407,9 @@ if __name__ == '__main__':
     
     method = args['--method']
     method_args = 'all'
+    
+    gpu_enabled_args = args['--gpu_enabled']
+    
 
     if out_path:
         ensure_directory(out_path)
@@ -408,8 +417,18 @@ if __name__ == '__main__':
     if method:
         method_args = method
         
+        
+    if gpu_enabled_args=='1':
+        gpu_enabled = 1
+    else:
+        gpu_enabled = 0
+        
+    
+    print(gpu_enabled)
+    #sys.exit(0)
+        
 
     if out_path and target_path is not out_path and not is_empty(out_path):
         print(' Target folder "%s" must be empty' % out_path)
     else:
-        augment(target_path, out_path,method_args)
+        augment(target_path, out_path,method_args,gpu_enabled)

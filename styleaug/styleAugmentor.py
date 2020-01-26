@@ -10,7 +10,7 @@ from os.path import join, dirname
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 class StyleAugmentor(nn.Module):
-    def __init__(self):
+    def __init__(self,gpu_enabled=0):
         super(StyleAugmentor,self).__init__()
 
         # create transformer and style predictor networks:
@@ -18,11 +18,16 @@ class StyleAugmentor(nn.Module):
         self.stylePredictor = StylePredictor()
         self.ghiasi.to(device)
         self.stylePredictor.to(device)
-
-        # load checkpoints:
-        checkpoint_ghiasi = torch.load(join(dirname(__file__),'checkpoints/checkpoint_transformer.pth'),map_location=torch.device('cpu') )
-        checkpoint_stylepredictor = torch.load(join(dirname(__file__),'checkpoints/checkpoint_stylepredictor.pth'),map_location=torch.device('cpu') )
-        checkpoint_embeddings = torch.load(join(dirname(__file__),'checkpoints/checkpoint_embeddings.pth'),map_location=torch.device('cpu') )
+        
+        if gpu_enabled:
+            checkpoint_ghiasi = torch.load(join(dirname(__file__),'checkpoints/checkpoint_transformer.pth'))
+            checkpoint_stylepredictor = torch.load(join(dirname(__file__),'checkpoints/checkpoint_stylepredictor.pth'))
+            checkpoint_embeddings = torch.load(join(dirname(__file__),'checkpoints/checkpoint_embeddings.pth'))
+        else:
+            # load checkpoints:
+            checkpoint_ghiasi = torch.load(join(dirname(__file__),'checkpoints/checkpoint_transformer.pth'),map_location=torch.device('cpu') )
+            checkpoint_stylepredictor = torch.load(join(dirname(__file__),'checkpoints/checkpoint_stylepredictor.pth'),map_location=torch.device('cpu') )
+            checkpoint_embeddings = torch.load(join(dirname(__file__),'checkpoints/checkpoint_embeddings.pth'),map_location=torch.device('cpu') )
         
         # load weights for ghiasi and stylePredictor, and mean / covariance for the embedding distribution:
         self.ghiasi.load_state_dict(checkpoint_ghiasi['state_dict_ghiasi'],strict=False)

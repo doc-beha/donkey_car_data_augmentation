@@ -11,13 +11,13 @@ import numpy as np
 
 class ImgStyleAug():
 
-    def img_style(self, im, alpha=0.1):
+    def img_style(self, im, alpha=0.1,augment_style_gpu_enabled=0):
         toTensor = ToTensor()
         toPIL = ToPILImage()
         im_torch = toTensor(im).unsqueeze(0) # 1 x 3 x 256 x 256
         im_torch = im_torch.to('cuda:0' if torch.cuda.is_available() else 'cpu')
         # create style augmentor:
-        augmentor = StyleAugmentor()
+        augmentor = StyleAugmentor(augment_style_gpu_enabled)
 
         # randomize style:
         im_restyled = augmentor.forward(im_torch, alpha)
